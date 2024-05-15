@@ -7,13 +7,13 @@ This component works only for ESP32 (it does not work on the ESP8266), although 
 The ESP32 has to be connected between the motherboard and the control panel of the portable AC. It does not need any extra power, since the power supply is provided by the AC. The integration works by intercepting the communication between the control panel and the AC. You can do that easily by adding some jumper to the connectors joining the main board and the control panel.
 You also need too pull down the `panel_rx_pin' to ground, using a 2K resistor (or similar), otherwise the panel will repeat the data multiple times, making the device unusable.
 
-![An image of the AC control panel](./docs/control_panel.jpg)
+
 
 ## Example configuration
 
 ```yaml
 external_components:
-  - source: github://sdoe0/jhs-climate-esphome
+  - source: github://sdoe0/jhs019-climate-esphome
 
 jhs_climate:
     id: "unique_ID"
