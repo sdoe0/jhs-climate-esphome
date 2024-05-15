@@ -6,7 +6,7 @@
 
 #include "jhs_recv_task.h"
 #include "esp32-hal.h"
-
+#include "Arduino.h"
 #include <sstream>
 #include <iomanip>
 
@@ -34,13 +34,17 @@ void JHSClimate::setup()
         .ac_rx_pin = this->ac_rx_pin_->get_pin(),
         .panel_rx_pin = this->panel_rx_pin_->get_pin()};
     start_jhs_climate_recv_task(recv_config);
+    this->water_full_sensor->publish_state(false);
     ESP_LOGI(TAG, "JHSClimate setup complete");
 
     // send hello packet to panel
     JHSAcPacket hello_packet;
-    hello_packet.beep_amount = 3;
-    hello_packet.beep_length = 1;
-    hello_packet.set_display("dd");
+    hello_packet.beep_amount = 0;
+    hello_packet.beep_length = 0;
+    hello_packet.power = 0;
+    hello_packet.cool = 1;
+    hello_packet.water_full = 1;
+    hello_packet.set_display("HA");
     this->send_rmt_data(this->rmt_panel_tx, hello_packet.to_wire_format());
     // auto ota = esphome::App.get_component<ota::OTAComponent>("ota");
     // OTAComponent->add_on_state_callback([this](esphome::ota::OTAState state, float progress, uint8_t error) {
@@ -61,11 +65,11 @@ void JHSClimate::setup_rmt()
 {
 
     this->rmt_panel_tx = rmtInit(this->panel_tx_pin_->get_pin(), true, RMT_MEM_192);
-    this->rmt_panel_tx_tick = rmtSetTick(this->rmt_panel_tx, 2500); // papieska wartość
+    this->rmt_panel_tx_tick = rmtSetTick(this->rmt_panel_tx, 2500); // papieska wartość -> päpstlicher Wert? besondere bedeutung?..
     ESP_LOGI(TAG, "RMT panel tx tick: %f", this->rmt_panel_tx_tick);
 
     this->rmt_ac_tx = rmtInit(this->ac_tx_pin_->get_pin(), true, RMT_MEM_192);
-    this->rmt_ac_tx_tick = rmtSetTick(this->rmt_ac_tx, 2500); // papieska wartość
+    this->rmt_ac_tx_tick = rmtSetTick(this->rmt_ac_tx, 2500); // papieska wartość -> päpstlicher Wert? besondere bedeutung?..
     ESP_LOGI(TAG, "RMT ac tx tick: %f", this->rmt_ac_tx_tick);
 
     // ugly hack to set all RMT channels to high on idle
@@ -182,11 +186,7 @@ void JHSClimate::recv_from_panel()
         {
             ESP_LOGI(TAG, "Received BUTTON_UNIT_CHANGE from panel, ignoring");
             JHSAcPacket hello_packet;
-            hello_packet.beep_amount = 3;
-            hello_packet.beep_length = 2;
-            hello_packet.power = 0;
-            hello_packet.cool = 1;
-            hello_packet.set_display("dd");
+            hello_packet.set_display("00");
             this->send_rmt_data(this->rmt_panel_tx, hello_packet.to_wire_format());
             continue;
         }
@@ -217,7 +217,7 @@ void JHSClimate::recv_from_ac()
             continue;
         }
         JHSAcPacket packet = *packet_optional;
-        ESP_LOGVV(TAG, "Received new packet from AC: %s", packet.to_string());
+        ESP_LOGVV(TAG, "Received new packet from AC: %s",packet.to_string());
 
 
         // Modify the packet 
@@ -225,6 +225,8 @@ void JHSClimate::recv_from_ac()
         if (is_adjusting()){
             packet.beep_amount = 0;
             packet.beep_length = 0;
+            packet.power =0;
+
         }
 
         esphome::climate::ClimateMode mode_from_packet = esphome::climate::CLIMATE_MODE_OFF;
@@ -235,14 +237,17 @@ void JHSClimate::recv_from_ac()
         else if (packet.heat)
         {
             mode_from_packet = esphome::climate::CLIMATE_MODE_HEAT;
+
         }
         else if (packet.fan)
         {
             mode_from_packet = esphome::climate::CLIMATE_MODE_FAN_ONLY;
+
         }
         else if (packet.dehum)
         {
             mode_from_packet = esphome::climate::CLIMATE_MODE_DRY;
+
         }
         esphome::climate::ClimateFanMode fan_from_packet = esphome::climate::CLIMATE_FAN_LOW;
         if (packet.fan_high)
@@ -254,7 +259,13 @@ void JHSClimate::recv_from_ac()
             fan_from_packet = esphome::climate::CLIMATE_FAN_LOW;
         }
         esphome::climate::ClimatePreset preset_from_packet = esphome::climate::CLIMATE_PRESET_NONE;
-        if (packet.sleep) preset_from_packet = esphome::climate::CLIMATE_PRESET_SLEEP;
+        if (packet.sleep == 1) {
+            preset_from_packet = esphome::climate::CLIMATE_PRESET_SLEEP;
+        }
+        else if (packet.sleep == 0) {
+            preset_from_packet = esphome::climate::CLIMATE_PRESET_NONE;
+        }
+
 
         if (!this->is_adjusting())
         {

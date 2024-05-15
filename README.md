@@ -13,16 +13,15 @@ You also need too pull down the `panel_rx_pin' to ground, using a 2K resistor (o
 
 ```yaml
 external_components:
-  - source: github://kacpi2442/jhs-climate-esphome
-climate:
-binary_sensor:
+  - source: github://sdoe0/jhs-climate-esphome
+
 jhs_climate:
-    id: jhsclimate
-    name: JHS Climate
-    ac_tx_pin: 26 # data going from the ESP to the AC
-    ac_rx_pin: 25 # data coming from the AC to the ESP
-    panel_rx_pin: 33 # data coming from the control panel to the ESP (needs to be pulled down to ground with a 2K resistor)
-    panel_tx_pin: 32 # data going from the ESP to the control panel
+    id: "unique_ID"
+    name: "your friendly name"
+    ac_rx_pin: 1 # data going from the ESP to the AC
+    ac_tx_pin: 3 # data coming from the AC to the ESP
+    panel_tx_pin: 33 # data coming from the control panel to the ESP (needs to be pulled down to ground with a 2K resistor)
+    panel_rx_pin: 32 # data going from the ESP to the control panel
     water_full_sensor:
       name: "Water full"
 ```

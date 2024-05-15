@@ -5,19 +5,21 @@ from esphome.const import CONF_ID
 from esphome import pins
 
 
+MULTI_CONF = True
+
+AUTO_LOAD = [ "binary_sensor", "climate"]
+
 DEPENDENCIES = []
 
 
-# JHSClimateComponent = cg.global_ns.class_(
-#     "JHSClimate", cg.Component, climate.Climate)
 JHSClimateComponent_ns = cg.esphome_ns.namespace("JHSClimate")
 JHSClimateComponent = JHSClimateComponent_ns.class_(
     "JHSClimate", cg.Component)
 
-CONF_AC_TX_PIN = 'ac_tx_pin'
-CONF_AC_RX_PIN = 'ac_rx_pin'
-CONF_PANEL_TX_PIN = 'panel_tx_pin'
-CONF_PANEL_RX_PIN = 'panel_rx_pin'
+CONF_AC_TX_PIN = 'ac_rx_pin'
+CONF_AC_RX_PIN = 'ac_tx_pin'
+CONF_PANEL_TX_PIN = 'panel_rx_pin'
+CONF_PANEL_RX_PIN = 'panel_tx_pin'
 CONF_WATER_FULL_SENSOR = 'water_full_sensor'
 
 CONFIG_SCHEMA = climate.CLIMATE_SCHEMA.extend(
